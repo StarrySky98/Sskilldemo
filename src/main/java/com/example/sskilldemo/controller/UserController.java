@@ -2,7 +2,7 @@ package com.example.sskilldemo.controller;
 
 
 import com.example.sskilldemo.pojo.User;
-import com.example.sskilldemo.service.MQSender;
+import com.example.sskilldemo.rabbitmq.MQSender;
 import com.example.sskilldemo.vo.RespBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -41,11 +41,24 @@ public class UserController {
      * @date 2022/8/3 19:24
      */
 
-    @RequestMapping("/mq")
+
+    /**
+     * 测试发送RabbitMQ消息
+     */
+    @RequestMapping("/mq/topic01")
     @ResponseBody
-    public void mq(){
-        mqSender.send("Hello");
+    public void mq01() {
+//        mqSender.send01("Hello,Red");
     }
+    /**
+     * 测试发送RabbitMQ消息
+     */
+    @RequestMapping("/mq/topic02")
+    @ResponseBody
+    public void mq02() {
+//        mqSender.send02("Hello,Green");
+    }
+
 
 
 }

@@ -20,6 +20,7 @@ import com.example.sskilldemo.vo.OrderDetailVo;
 import com.example.sskilldemo.vo.RespBeanEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,7 +57,44 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     @Transactional
-    public Order secSkill(User user, GoodsVo goodsVo) {
+    public Order secSkill(User user, GoodsVo goods) {
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+        //秒杀商品表减库存
+        SeckillGoods seckillGoods = seckillGoodsService.getOne(new
+                QueryWrapper<SeckillGoods>().eq("goods_id", goods.getId()));
+        boolean seckillGoodsResult = seckillGoodsService.update(
+                new UpdateWrapper<SeckillGoods>().setSql("stock_count = stock_count- 1").eq("goods_id", goods.getId()).gt("stock_count", 0));
+        // seckillGoodsService.updateById(seckillGoods);
+        if (seckillGoods.getStockCount() < 1) {
+            //判断是否还有库存
+            valueOperations.set("isStockEmpty:" + goods.getId(), "0");
+            return null;
+        }
+        //生成订单
+        Order order = new Order();
+        order.setUserId(user.getId());
+        order.setGoodsId(goods.getId());
+        order.setDeliveryAddrId(0L);
+        order.setGoodsName(goods.getGoodsName());
+        order.setGoodsCount(1);
+        order.setGoodsPrice(seckillGoods.getSeckillPrice());
+        order.setOrderChannel(1);
+        order.setStatus(0);
+        order.setCreateDate(new Date());
+        orderMapper.insert(order);
+        //生成秒杀订单
+        SeckillOrder seckillOrder = new SeckillOrder();
+        seckillOrder.setOrderId(order.getId());
+        seckillOrder.setUserId(user.getId());
+        seckillOrder.setGoodsId(goods.getId());
+        seckillOrderService.save(seckillOrder);
+        valueOperations.set("order:" + user.getId() + ":" + goods.getId(),
+                JsonUtil.object2JsonStr(seckillOrder));
+        return order;
+    }
+
+    @Transactional
+    public Order secSkill2(User user, GoodsVo goodsVo) {
         //秒杀减库存
         SeckillGoods seckillGoods = seckillGoodsService.getOne(new QueryWrapper<SeckillGoods>().eq
                 ("goods_id", goodsVo.getId()));

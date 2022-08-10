@@ -19,4 +19,6 @@ public interface IOrderService extends IService<Order> {
      Order secSkill(User user, GoodsVo goodsVo);
 
     OrderDetailVo detail(Long orderId);
+
+
 }
