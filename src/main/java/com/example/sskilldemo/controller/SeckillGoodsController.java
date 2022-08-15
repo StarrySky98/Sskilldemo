@@ -25,6 +25,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -72,14 +73,18 @@ public class SeckillGoodsController implements InitializingBean {
     @Autowired
     RedisScript script;
     private Map<Long, Boolean> EmptyStockMap = new HashMap<>();
-    @RequestMapping(value = "/doSeckill")
+    @RequestMapping(value = "/{path}/doSeckill",method = RequestMethod.POST)
     @ResponseBody
-    public RespBean doSeckill( User user,Long goodsId){
+    public RespBean doSeckill(@PathVariable String path, User user, Long goodsId){
         if(user == null){
             return RespBean.success(RespBeanEnum.SESSION_ERROR);
         }
         log.info("秒杀按钮：{}",user);
         ValueOperations valueOperations = redisTemplate.opsForValue();
+        boolean check = orderService.checkPath(user,goodsId,path);
+        if (!check){
+            return RespBean.error(RespBeanEnum.REQUEST_ILLEGAL);
+        }
         //判断是否重复抢购
         String seckillOrderJson = (String) valueOperations.get("order:" +
                 user.getId() + ":" + goodsId);
@@ -103,6 +108,15 @@ public class SeckillGoodsController implements InitializingBean {
         SeckillMessage message = new SeckillMessage(user, goodsId);
         mqSender.sendsecKillMessage(JsonUtil.object2JsonStr(message));
         return RespBean.success(0);
+    }
+    @RequestMapping(value = "/path", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getPath(User user, Long goodsId) {
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+        String str = orderService.createPath(user, goodsId);
+        return RespBean.success(str);
     }
     @RequestMapping(value = "/doSeckill2")
     @ResponseBody

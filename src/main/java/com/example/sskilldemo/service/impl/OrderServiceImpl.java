@@ -16,6 +16,8 @@ import com.example.sskilldemo.service.IOrderService;
 import com.example.sskilldemo.service.ISeckillGoodsService;
 import com.example.sskilldemo.service.ISeckillOrderService;
 import com.example.sskilldemo.utils.JsonUtil;
+import com.example.sskilldemo.utils.MD5Util;
+import com.example.sskilldemo.utils.UUIDUtil;
 import com.example.sskilldemo.vo.GoodsVo;
 import com.example.sskilldemo.vo.OrderDetailVo;
 import com.example.sskilldemo.vo.RespBeanEnum;
@@ -25,8 +27,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.util.StringUtils;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -158,6 +162,27 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
         log.info("订单信息：{}",detailVo);
         return detailVo;
+    }
+
+    @Override
+    public boolean checkPath(User user, Long goodsId, String path) {
+        if (user==null|| StringUtils.isEmpty(path)){
+            return false;
+        }
+        String redisPath = (String) redisTemplate.opsForValue().get("seckillPath:" +
+                user.getId() + ":" + goodsId);
+        return path.equals(redisPath);
+
+    }
+
+    @Override
+    public String createPath(User user, Long goodsId) {
+        String str = MD5Util.md5(UUIDUtil.uuid() + "123456");
+
+        redisTemplate.opsForValue().set("seckillPath:" + user.getId() + ":" +
+                goodsId, str, 60, TimeUnit.SECONDS);
+        return str;
+
     }
 
 }

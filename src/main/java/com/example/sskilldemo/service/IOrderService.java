@@ -20,5 +20,25 @@ public interface IOrderService extends IService<Order> {
 
     OrderDetailVo detail(Long orderId);
 
+    /**
+     * @author zhangkang
+     * @description //校验路径
+     * @date 2022/8/15 17:57
+     * @param user
+     * @param goodsId
+     * @param path
+     * @return boolean
+     */
 
+    boolean checkPath(User user, Long goodsId, String path);
+    /**
+     * @author zhangkang
+     * @description 获取路径
+     * @date 2022/8/15 17:58
+     * @param user
+     * @param goodsId
+     * @return java.lang.String
+     */
+
+    String createPath(User user, Long goodsId);
 }
