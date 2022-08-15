@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.conditions.update.UpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.sskilldemo.exception.GlobalException;
 import com.example.sskilldemo.mapper.OrderMapper;
+import com.example.sskilldemo.mapper.SeckillOrderMapper;
 import com.example.sskilldemo.pojo.Order;
 import com.example.sskilldemo.pojo.SeckillGoods;
 import com.example.sskilldemo.pojo.SeckillOrder;
@@ -18,6 +19,7 @@ import com.example.sskilldemo.utils.JsonUtil;
 import com.example.sskilldemo.vo.GoodsVo;
 import com.example.sskilldemo.vo.OrderDetailVo;
 import com.example.sskilldemo.vo.RespBeanEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -35,6 +37,7 @@ import java.util.Date;
  * @since 2022-07-24
  */
 @Service
+@Slf4j
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements IOrderService {
     @Autowired
     private ISeckillGoodsService seckillGoodsService;
@@ -44,6 +47,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private ISeckillOrderService seckillOrderService;
     @Autowired
     private OrderMapper orderMapper;
+    @Autowired
+    private SeckillOrderMapper seckillOrderMapper;
     @Autowired
     private RedisTemplate redisTemplate;
     /**
@@ -142,11 +147,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if(orderId==null){
             throw new GlobalException(RespBeanEnum.ORDER_NOT_EXIST);
         }
-        Order order = orderMapper.selectById(orderId);
-        GoodsVo goodsVo = goodsService.findGoodsVoByGoodsId(order.getGoodsId());
+        SeckillOrder seckillOrder = seckillOrderMapper.selectById(orderId);
+        Order order = orderMapper.selectById(seckillOrder.getOrderId());
+        log.info("已经查到订单：{}",seckillOrder);
+        GoodsVo goodsVo = goodsService.findGoodsVoByGoodsId(seckillOrder.getGoodsId());
+        log.info("已经查到商品：{}",goodsVo);
         OrderDetailVo detailVo = new OrderDetailVo();
         detailVo.setOrder(order);
         detailVo.setGoodsVo(goodsVo);
+
+        log.info("订单信息：{}",detailVo);
         return detailVo;
     }
 
